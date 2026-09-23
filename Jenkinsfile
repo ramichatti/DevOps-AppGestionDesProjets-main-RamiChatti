@@ -1,8 +1,13 @@
 pipeline {
     agent any
 
+    // Trigger Planifié Pour Test
+    // triggers {
+    //     cron('* * * * *')
+    // }
+
     triggers {
-        cron('* * * * *')
+    githubPush()
     }
 
     stages {
