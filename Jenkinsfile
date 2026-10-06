@@ -18,10 +18,32 @@ pipeline {
             }
         }
 
-        stage('Build Backend') {
+        stage('Build & Test Backend') {
             steps {
                 dir('backend') {
-                    sh './mvnw clean package -DskipTests'
+                    sh './mvnw clean verify'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                dir('backend') {
+                    withSonarQubeEnv('SonarQube') {
+                        sh '''
+                            ./mvnw sonar:sonar \
+                                -Dsonar.projectKey=appgestion-backend \
+                                -Dsonar.projectName="AppGestion Backend"
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
@@ -44,8 +66,12 @@ pipeline {
                     )
                 ]) {
                     sh '''
-                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                        echo "$DOCKER_PASSWORD" | docker login \
+                            -u "$DOCKER_USERNAME" \
+                            --password-stdin
+
                         docker push ${DOCKER_IMAGE}
+
                         docker logout
                     '''
                 }
@@ -55,11 +81,11 @@ pipeline {
 
     post {
         success {
-            echo '✅ Backend CI/CD : BUILD + DOCKER BUILD + DOCKER PUSH SUCCESS'
+            echo '✅ CI/CD SUCCESS : Build + Tests + SonarQube + Quality Gate + Docker Build + Docker Push'
         }
 
         failure {
-            echo '❌ Backend CI/CD : FAILURE'
+            echo '❌ CI/CD FAILURE'
         }
     }
 }
