@@ -31,7 +31,7 @@ pipeline {
                 dir('backend') {
                     withSonarQubeEnv('SonarQube') {
                         sh '''
-                            ./mvnw sonar:sonar \
+                            ./mvnw org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
                                 -Dsonar.projectKey=appgestion-backend \
                                 -Dsonar.projectName="AppGestion Backend"
                         '''
